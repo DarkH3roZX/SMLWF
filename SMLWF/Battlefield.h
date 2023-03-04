@@ -60,6 +60,8 @@ class Battlefield {
 		long int botHP[4];
 		int currWeapon;
 
+		bool isDead[4];
+
 		// Battlefield Stats Variables
 		int totalDmg;
 		int highestDmg;

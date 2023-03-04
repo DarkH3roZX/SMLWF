@@ -247,6 +247,9 @@ void Battlefield::reset() {
 	totalDmg = 0;
 	highestDmg = 0;
 	attacks = 0;
+
+	for (int i = 0; i < 4; i++)
+		isDead[i] = false;
 }
 
 void Battlefield::attack() {
@@ -266,6 +269,7 @@ void Battlefield::attack() {
 	// Shotgun special variables
 	int maxPelletHit;
 	int damageTemp;
+	int pelletHits;
 	bool onePelletHeadshot;
 
 	// Explosive special variables
@@ -388,6 +392,9 @@ void Battlefield::attack() {
 			hpDisplay();
 
 			if (i != 0) {
+				if (backpack[currWeapon].weaponType == 1)
+					cout << "Pellet Hit: " << pelletHits << endl;
+
 				if (realDamage == 0)
 					cout << "You Missed!" << endl;
 				else if (isCrit)
@@ -430,7 +437,7 @@ void Battlefield::attack() {
 
 				// Max pellet hit and accuracy calculation
 				if (distanceToPlayer > shotgun[backpack[currWeapon].weaponIndex].getEffectiveRange()) {
-					maxPelletHit -= shotgun[backpack[currWeapon].weaponIndex].getPelletCount() - ((distanceToPlayer - shotgun[backpack[currWeapon].weaponIndex].getEffectiveRange()) / 2 + 1);
+					maxPelletHit -= ((distanceToPlayer - shotgun[backpack[currWeapon].weaponIndex].getEffectiveRange()) / 2 + 1);
 					accuracy -= (distanceToPlayer - shotgun[backpack[currWeapon].weaponIndex].getEffectiveRange()) / 2;
 
 					if (maxPelletHit < 0)
@@ -440,13 +447,17 @@ void Battlefield::attack() {
 						accuracy = 0;
 				}
 
+				pelletHits = 0;
+
 				// Damage calculation
 				for (int j = 0; j < maxPelletHit; j++) {
 					damageTemp = critCalculation(shotgun[backpack[currWeapon].weaponIndex].getDamage(), shotgun[backpack[currWeapon].weaponIndex].getCR(), shotgun[backpack[currWeapon].weaponIndex].getCD(), isCrit);
 					rng = rand() % 10000;
-
-					if (rng < accuracy * 100)
+					
+					if (rng < accuracy * 100) {
 						realDamage += damageTemp;
+						pelletHits++;
+					}
 				}
 
 				// Reduce bot HP
@@ -763,10 +774,13 @@ void Battlefield::attack() {
 				}
 				else {
 					for (int j = 0; j < robots; j++) {
-						if (isCrit && isHit[j])
+						if (isCrit && isHit[j] && !isDead[j])
 							cout << "Bot " << j + 1 << " Took " << realDamage << " damage! (Critical)" << endl;
-						else if (isHit[j])
+						else if (isHit[j] && !isDead[j])
 							cout << "Bot " << j + 1 << " Took " << realDamage << " damage!" << endl;
+
+						if (botHP[j] == 0)
+							isDead[j] = true;
 					}
 				}
 			}
@@ -919,6 +933,10 @@ void Battlefield::reload() {
 		cout << "Weapon can't be reloaded!";
 		cin.get();
 	}
+	else if (ammos[currWeapon] == magSizes[currWeapon]) {
+		cout << "Weapon already reloaded!";
+		cin.get();
+	}
 	else {
 		ammos[currWeapon] = magSizes[currWeapon];
 
@@ -1046,7 +1064,7 @@ void Battlefield::statsDisplay() {
 	system("cls");
 	arenaDisplay();
 
-	cout << "Time Elapsed: " << timeElapsed << "s" << endl;
+	cout << "Time Elapsed: " << format("{0:.1f}", timeElapsed) << "s" << endl;
 	cout << "Total Damage: " << totalDmg << endl;
 	cout << "Highest Damage: " << highestDmg << endl;
 	cout << "Attack Count: " << attacks << endl << endl;
